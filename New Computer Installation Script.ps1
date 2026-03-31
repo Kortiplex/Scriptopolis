@@ -286,9 +286,20 @@ function Get-PackageDefinitions {
 		$id = Get-OptionalStringProperty -InputObject $entry -PropertyName 'Id'
 		$source = Get-OptionalStringProperty -InputObject $entry -PropertyName 'Source'
 		$desiredVersion = Get-OptionalStringProperty -InputObject $entry -PropertyName 'DesiredVersion'
+		$installScope = Get-OptionalStringProperty -InputObject $entry -PropertyName 'InstallScope'
 
 		if ([string]::IsNullOrWhiteSpace($name) -or [string]::IsNullOrWhiteSpace($id)) {
 			throw "Each package entry must define Name and Id. File: $ConfigPath"
+		}
+
+		$scopeNormalized = $null
+		if (-not [string]::IsNullOrWhiteSpace($installScope)) {
+			$scopeCandidate = $installScope.Trim().ToLowerInvariant()
+			if ($scopeCandidate -notin @('user', 'machine')) {
+				throw "InstallScope must be 'user' or 'machine' when provided. Package: $($name.Trim()) | File: $ConfigPath"
+			}
+
+			$scopeNormalized = $scopeCandidate
 		}
 
 		$result.Add([PSCustomObject]@{
@@ -296,6 +307,7 @@ function Get-PackageDefinitions {
 			Id = $id.Trim()
 			Source = if ([string]::IsNullOrWhiteSpace($source)) { $null } else { $source.Trim() }
 			DesiredVersion = if ([string]::IsNullOrWhiteSpace($desiredVersion)) { $null } else { $desiredVersion.Trim() }
+			InstallScope = $scopeNormalized
 		})
 	}
 
@@ -364,6 +376,10 @@ function Install-WingetPackage {
 
 	if (-not [string]::IsNullOrWhiteSpace($Package.DesiredVersion)) {
 		$args += @('--version', $Package.DesiredVersion)
+	}
+
+	if (-not [string]::IsNullOrWhiteSpace($Package.InstallScope)) {
+		$args += @('--scope', $Package.InstallScope)
 	}
 
 	# Keep useful status lines while suppressing spinner/progress noise.
@@ -443,7 +459,8 @@ function Select-PackagesToInstall {
 			$pkg = $PendingPackages[$i]
 			$mark = if ($selected[$i]) { 'x' } else { ' ' }
 			$versionText = if (-not [string]::IsNullOrWhiteSpace($pkg.DesiredVersion)) { " (target: $($pkg.DesiredVersion))" } else { '' }
-			Write-Host (" {0,2}. [{1}] {2} [{3}]{4}" -f ($i + 1), $mark, $pkg.Name, $pkg.Id, $versionText) -ForegroundColor White
+			$scopeText = if (-not [string]::IsNullOrWhiteSpace($pkg.InstallScope)) { " | scope: $($pkg.InstallScope)" } else { '' }
+			Write-Host (" {0,2}. [{1}] {2} [{3}]{4}{5}" -f ($i + 1), $mark, $pkg.Name, $pkg.Id, $versionText, $scopeText) -ForegroundColor White
 		}
 
 		Write-Host ''
@@ -558,6 +575,7 @@ foreach ($pkg in $packages) {
 		if ($null -ne $registryMatch) { $detectedBy += 'registry' }
 		if ($null -ne $commandPath) { $detectedBy += 'command' }
 		$versionText = if (-not [string]::IsNullOrWhiteSpace($pkg.DesiredVersion)) { $pkg.DesiredVersion } else { '(not pinned)' }
+		$scopeText = if (-not [string]::IsNullOrWhiteSpace($pkg.InstallScope)) { $pkg.InstallScope } else { '(default)' }
 		$detectedVersion = if (-not [string]::IsNullOrWhiteSpace($wingetVersion)) {
 			$wingetVersion
 		}
@@ -574,6 +592,7 @@ foreach ($pkg in $packages) {
 			Path = $pathText
 			DetectedBy = ($detectedBy -join ', ')
 			DesiredVersion = $versionText
+			InstallScope = $scopeText
 			DetectedVersion = $detectedVersion
 		})
 	}
@@ -593,6 +612,7 @@ if ($alreadyInstalled.Count -gt 0) {
 		Write-ItemLine -Label 'Detected By' -Value $item.DetectedBy -Color DarkGray
 		Write-ItemLine -Label 'Detected Version' -Value $item.DetectedVersion -Color DarkGray
 		Write-ItemLine -Label 'Desired Version' -Value $item.DesiredVersion -Color DarkGray
+		Write-ItemLine -Label 'Install Scope' -Value $item.InstallScope -Color DarkGray
 		Write-ItemLine -Label 'Path' -Value $item.Path -Color DarkGray
 	}
 }
