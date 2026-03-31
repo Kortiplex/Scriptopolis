@@ -4,10 +4,16 @@ All notable changes to this project are documented in this file.
 
 ## [x.x.x] - Unreleased
 
-### Changed 
+### Added
 
-- Extracted package definitions to `packages.json` file.
-- Allow package version to be defined.
+- Optional `DesiredVersion` support per package in `packages.json`, passed to WinGet via `--version` when specified.
+- Optional `InstallScope` support per package in `packages.json`, validated to `user` or `machine` and passed via `--scope`.
+
+### Changed
+
+- Moved installer package definitions out of the script and into `packages.json`.
+- Added `Ollama.Ollama` to the managed package list.
+- Marked all managed packages with `InstallScope: "machine"` for system-level installs by default.
 
 ## [0.1.0] - 2026-03-31
 
