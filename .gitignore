@@ -1,0 +1,37 @@
+# OS-generated files
+Thumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Editor/IDE settings
+.vscode/
+.idea/
+
+# Logs and runtime artifacts
+*.log
+*.out
+*.err
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+~$*
+
+# Environment/local secrets
+.env
+.env.*
+!.env.example
+
+# Common dependency/build folders
+node_modules/
+dist/
+build/
+
+# Python artifacts
+__pycache__/
+*.pyc
+.venv/
+venv/
