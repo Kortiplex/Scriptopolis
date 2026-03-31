@@ -171,7 +171,18 @@ function Get-WingetListIndex {
 
 		foreach ($pkg in $source.Packages) {
 			if (-not [string]::IsNullOrWhiteSpace($pkg.PackageIdentifier)) {
-				$wingetIndex[$pkg.PackageIdentifier] = $true
+				$version = $null
+				if ($null -ne $pkg.PSObject.Properties['Version'] -and -not [string]::IsNullOrWhiteSpace([string]$pkg.Version)) {
+					$version = [string]$pkg.Version
+				}
+				elseif ($null -ne $pkg.PSObject.Properties['PackageVersion'] -and -not [string]::IsNullOrWhiteSpace([string]$pkg.PackageVersion)) {
+					$version = [string]$pkg.PackageVersion
+				}
+
+				$wingetIndex[$pkg.PackageIdentifier] = [PSCustomObject]@{
+					Installed = $true
+					Version = $version
+				}
 			}
 		}
 	}
@@ -179,7 +190,7 @@ function Get-WingetListIndex {
 	return $wingetIndex
 }
 
-function Test-WingetInstalled {
+function Get-WingetInstalledVersion {
 	param(
 		[Parameter(Mandatory)]
 		[string]$Id,
@@ -187,7 +198,112 @@ function Test-WingetInstalled {
 		[hashtable]$WingetIndex
 	)
 
-	return $WingetIndex.ContainsKey($Id)
+	if (-not $WingetIndex.ContainsKey($Id)) {
+		return $null
+	}
+
+	$entry = $WingetIndex[$Id]
+	if ($null -eq $entry -or $entry -is [bool]) {
+		return $null
+	}
+
+	if ($null -eq $entry.PSObject.Properties['Version']) {
+		return $null
+	}
+
+	$version = [string]$entry.Version
+	if ([string]::IsNullOrWhiteSpace($version)) {
+		return $null
+	}
+
+	return $version.Trim()
+}
+
+function Test-DesiredVersionMatch {
+	param(
+		[string]$DesiredVersion,
+		[string]$WingetVersion,
+		[string]$RegistryVersion
+	)
+
+	if ([string]::IsNullOrWhiteSpace($DesiredVersion)) {
+		return $true
+	}
+
+	$desired = $DesiredVersion.Trim()
+	$candidates = @($WingetVersion, $RegistryVersion) |
+		Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
+
+	if ($candidates.Count -eq 0) {
+		return $false
+	}
+
+	foreach ($candidate in $candidates) {
+		if ([string]::Equals(([string]$candidate).Trim(), $desired, [System.StringComparison]::OrdinalIgnoreCase)) {
+			return $true
+		}
+	}
+
+	return $false
+}
+
+function Get-PackageDefinitions {
+	param(
+		[Parameter(Mandatory)]
+		[string]$ConfigPath
+	)
+
+	if (-not (Test-Path -LiteralPath $ConfigPath -PathType Leaf)) {
+		throw "Package configuration file not found: $ConfigPath"
+	}
+
+	$json = Get-Content -LiteralPath $ConfigPath -Raw -ErrorAction Stop
+	if ([string]::IsNullOrWhiteSpace($json)) {
+		throw "Package configuration file is empty: $ConfigPath"
+	}
+
+	$parsed = $json | ConvertFrom-Json -ErrorAction Stop
+
+	$sourcePackages = $null
+	if ($parsed -is [System.Array]) {
+		$sourcePackages = $parsed
+	}
+	elseif ($null -ne $parsed.PSObject.Properties['packages']) {
+		$sourcePackages = @($parsed.packages)
+	}
+	else {
+		throw "Package configuration must be an array or an object with a 'packages' array: $ConfigPath"
+	}
+
+	$result = New-Object System.Collections.Generic.List[object]
+
+	foreach ($entry in @($sourcePackages)) {
+		if ($null -eq $entry) {
+			continue
+		}
+
+		$name = Get-OptionalStringProperty -InputObject $entry -PropertyName 'Name'
+		$id = Get-OptionalStringProperty -InputObject $entry -PropertyName 'Id'
+		$source = Get-OptionalStringProperty -InputObject $entry -PropertyName 'Source'
+		$desiredVersion = Get-OptionalStringProperty -InputObject $entry -PropertyName 'DesiredVersion'
+
+		if ([string]::IsNullOrWhiteSpace($name) -or [string]::IsNullOrWhiteSpace($id)) {
+			throw "Each package entry must define Name and Id. File: $ConfigPath"
+		}
+
+		$result.Add([PSCustomObject]@{
+			Name = $name.Trim()
+			Id = $id.Trim()
+			Source = if ([string]::IsNullOrWhiteSpace($source)) { $null } else { $source.Trim() }
+			DesiredVersion = if ([string]::IsNullOrWhiteSpace($desiredVersion)) { $null } else { $desiredVersion.Trim() }
+		})
+	}
+
+	if ($result.Count -eq 0) {
+		throw "No package entries were found in: $ConfigPath"
+	}
+
+	return @($result.ToArray())
 }
 
 function Find-RegistryProgramForPackage {
@@ -244,6 +360,10 @@ function Install-WingetPackage {
 
 	if (-not [string]::IsNullOrWhiteSpace($Package.Source)) {
 		$args += @('--source', $Package.Source)
+	}
+
+	if (-not [string]::IsNullOrWhiteSpace($Package.DesiredVersion)) {
+		$args += @('--version', $Package.DesiredVersion)
 	}
 
 	# Keep useful status lines while suppressing spinner/progress noise.
@@ -322,7 +442,8 @@ function Select-PackagesToInstall {
 		for ($i = 0; $i -lt $PendingPackages.Count; $i++) {
 			$pkg = $PendingPackages[$i]
 			$mark = if ($selected[$i]) { 'x' } else { ' ' }
-			Write-Host (" {0,2}. [{1}] {2} [{3}]" -f ($i + 1), $mark, $pkg.Name, $pkg.Id) -ForegroundColor White
+			$versionText = if (-not [string]::IsNullOrWhiteSpace($pkg.DesiredVersion)) { " (target: $($pkg.DesiredVersion))" } else { '' }
+			Write-Host (" {0,2}. [{1}] {2} [{3}]{4}" -f ($i + 1), $mark, $pkg.Name, $pkg.Id, $versionText) -ForegroundColor White
 		}
 
 		Write-Host ''
@@ -384,50 +505,8 @@ function Select-PackagesToInstall {
 
 	return @($result.ToArray())
 }
-
-$packages = @(
-	[PSCustomObject]@{ Name = 'Blender'; Id = 'BlenderFoundation.Blender'; Source = $null },
-	[PSCustomObject]@{ Name = 'Zen Browser'; Id = 'Zen-Team.Zen-Browser'; Source = $null },
-	[PSCustomObject]@{ Name = 'Visual Studio Build Tools'; Id = 'Microsoft.VisualStudio.2022.BuildTools'; Source = $null },
-	[PSCustomObject]@{ Name = 'Java (OpenJDK 21)'; Id = 'Microsoft.OpenJDK.21'; Source = $null },
-	[PSCustomObject]@{ Name = 'NVIDIA CUDA'; Id = 'Nvidia.CUDA'; Source = $null },
-	[PSCustomObject]@{ Name = 'PDFGear'; Id = 'PDFgear.PDFgear'; Source = $null },
-	[PSCustomObject]@{ Name = 'PowerToys'; Id = 'Microsoft.PowerToys'; Source = $null },
-	[PSCustomObject]@{ Name = 'GitHub Desktop'; Id = 'GitHub.GitHubDesktop'; Source = $null },
-	[PSCustomObject]@{ Name = 'Cascadeur'; Id = 'XPFMG5VK7FJPXL'; Source = 'msstore' },
-	[PSCustomObject]@{ Name = 'yt-dlp'; Id = 'yt-dlp.yt-dlp'; Source = $null },
-	[PSCustomObject]@{ Name = 'HandBrake'; Id = 'HandBrake.HandBrake'; Source = $null },
-	[PSCustomObject]@{ Name = 'jq'; Id = 'jqlang.jq'; Source = $null },
-	[PSCustomObject]@{ Name = 'Obsidian'; Id = 'Obsidian.Obsidian'; Source = $null },
-	[PSCustomObject]@{ Name = 'JetBrains Toolbox'; Id = 'JetBrains.Toolbox'; Source = $null },
-	[PSCustomObject]@{ Name = 'Steam'; Id = 'Valve.Steam'; Source = $null },
-	[PSCustomObject]@{ Name = 'Epic Games Launcher'; Id = 'EpicGames.EpicGamesLauncher'; Source = $null },
-	[PSCustomObject]@{ Name = 'Unity Hub'; Id = 'Unity.UnityHub'; Source = $null },
-	[PSCustomObject]@{ Name = 'MSI Afterburner'; Id = 'Guru3D.Afterburner'; Source = $null },
-	[PSCustomObject]@{ Name = 'F3D'; Id = 'f3d-app.f3d'; Source = $null },
-	[PSCustomObject]@{ Name = 'JetBrains Mono Nerd Font'; Id = 'DEVCOM.JetBrainsMonoNerdFont'; Source = $null },
-	[PSCustomObject]@{ Name = 'OBS Studio'; Id = 'OBSProject.OBSStudio'; Source = $null },
-	[PSCustomObject]@{ Name = 'Winaero Tweaker'; Id = 'winaero.tweaker'; Source = $null },
-	[PSCustomObject]@{ Name = 'Git'; Id = 'Git.Git'; Source = $null },
-	[PSCustomObject]@{ Name = 'Aria2'; Id = 'aria2.aria2'; Source = $null },
-	[PSCustomObject]@{ Name = 'FFmpeg'; Id = 'Gyan.FFmpeg'; Source = $null },
-	[PSCustomObject]@{ Name = 'Python'; Id = 'Python.Python.3.12'; Source = $null },
-	[PSCustomObject]@{ Name = 'uv'; Id = 'astral-sh.uv'; Source = $null },
-	[PSCustomObject]@{ Name = 'NVM for Windows'; Id = 'CoreyButler.NVMforWindows'; Source = $null },
-	[PSCustomObject]@{ Name = '7-Zip'; Id = '7zip.7zip'; Source = $null },
-	[PSCustomObject]@{ Name = 'Visual Studio Code'; Id = 'Microsoft.VisualStudioCode'; Source = $null },
-	[PSCustomObject]@{ Name = 'GIMP'; Id = 'GIMP.GIMP.3'; Source = $null },
-	[PSCustomObject]@{ Name = 'Inkscape'; Id = 'Inkscape.Inkscape'; Source = $null },
-	[PSCustomObject]@{ Name = 'HWiNFO'; Id = 'REALiX.HWiNFO'; Source = $null },
-	[PSCustomObject]@{ Name = 'Greenshot'; Id = 'Greenshot.Greenshot'; Source = $null },
-	[PSCustomObject]@{ Name = 'Notepad++'; Id = 'Notepad++.Notepad++'; Source = $null },
-	[PSCustomObject]@{ Name = 'Audacity'; Id = 'Audacity.Audacity'; Source = $null },
-	[PSCustomObject]@{ Name = 'foobar2000'; Id = 'PeterPawlowski.foobar2000'; Source = $null },
-	[PSCustomObject]@{ Name = 'Bitwarden'; Id = 'Bitwarden.Bitwarden'; Source = $null },
-	[PSCustomObject]@{ Name = 'Google Chrome'; Id = 'Google.Chrome'; Source = $null },
-	[PSCustomObject]@{ Name = 'OpenCode'; Id = 'SST.OpenCodeDesktop'; Source = $null },
-	[PSCustomObject]@{ Name = 'WinDirStat'; Id = 'WinDirStat.WinDirStat'; Source = $null }
-)
+$packageConfigPath = Join-Path -Path $PSScriptRoot -ChildPath 'packages.json'
+$packages = Get-PackageDefinitions -ConfigPath $packageConfigPath
 
 if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 	Write-Host 'winget was not found on this machine. Install App Installer from Microsoft Store first.' -ForegroundColor Red
@@ -436,6 +515,7 @@ if (-not (Get-Command winget -ErrorAction SilentlyContinue)) {
 
 Write-Section -Title 'New Machine Package Installer' -Color Green
 Write-Host 'This script checks installed apps first, skips existing packages, then installs missing ones.' -ForegroundColor Gray
+Write-Host ("Package config: {0}" -f $packageConfigPath) -ForegroundColor DarkGray
 
 Write-Section -Title 'Collecting Installed Program Data' -Color Yellow
 $registryPrograms = Get-RegistryInstalledPrograms
@@ -448,17 +528,21 @@ $alreadyInstalled = New-Object System.Collections.Generic.List[object]
 $toInstall = New-Object System.Collections.Generic.List[object]
 
 foreach ($pkg in $packages) {
-	$isWingetInstalled = Test-WingetInstalled -Id $pkg.Id -WingetIndex $wingetIndex
+	$wingetVersion = Get-WingetInstalledVersion -Id $pkg.Id -WingetIndex $wingetIndex
 	$registryMatch = Find-RegistryProgramForPackage -PackageName $pkg.Name -RegistryPrograms $registryPrograms
+	$registryVersion = if ($null -ne $registryMatch) { [string]$registryMatch.Version } else { $null }
 	$commandName = $null
 	$commandPath = $null
+	$versionMatches = Test-DesiredVersionMatch -DesiredVersion $pkg.DesiredVersion -WingetVersion $wingetVersion -RegistryVersion $registryVersion
 
 	if ($commandHints.ContainsKey($pkg.Id)) {
 		$commandName = $commandHints[$pkg.Id]
 		$commandPath = Get-InstalledCommandPath -CommandName $commandName
 	}
 
-	if ($isWingetInstalled -or $null -ne $registryMatch -or $null -ne $commandPath) {
+	$isDetected = ($WingetIndex.ContainsKey($pkg.Id) -or $null -ne $registryMatch -or $null -ne $commandPath)
+
+	if ($isDetected -and $versionMatches) {
 		$pathText = if ($null -ne $registryMatch) {
 			Get-ProgramPathText -Program $registryMatch
 		}
@@ -470,15 +554,27 @@ foreach ($pkg in $packages) {
 		}
 
 		$detectedBy = @()
-		if ($isWingetInstalled) { $detectedBy += 'winget' }
+		if ($WingetIndex.ContainsKey($pkg.Id)) { $detectedBy += 'winget' }
 		if ($null -ne $registryMatch) { $detectedBy += 'registry' }
 		if ($null -ne $commandPath) { $detectedBy += 'command' }
+		$versionText = if (-not [string]::IsNullOrWhiteSpace($pkg.DesiredVersion)) { $pkg.DesiredVersion } else { '(not pinned)' }
+		$detectedVersion = if (-not [string]::IsNullOrWhiteSpace($wingetVersion)) {
+			$wingetVersion
+		}
+		elseif (-not [string]::IsNullOrWhiteSpace($registryVersion)) {
+			$registryVersion
+		}
+		else {
+			'(unknown)'
+		}
 
 		$alreadyInstalled.Add([PSCustomObject]@{
 			Name = $pkg.Name
 			Id = $pkg.Id
 			Path = $pathText
 			DetectedBy = ($detectedBy -join ', ')
+			DesiredVersion = $versionText
+			DetectedVersion = $detectedVersion
 		})
 	}
 	else {
@@ -495,6 +591,8 @@ if ($alreadyInstalled.Count -gt 0) {
 	foreach ($item in ($alreadyInstalled | Sort-Object Name)) {
 		Write-Host (" - {0} [{1}]" -f $item.Name, $item.Id) -ForegroundColor DarkGreen
 		Write-ItemLine -Label 'Detected By' -Value $item.DetectedBy -Color DarkGray
+		Write-ItemLine -Label 'Detected Version' -Value $item.DetectedVersion -Color DarkGray
+		Write-ItemLine -Label 'Desired Version' -Value $item.DesiredVersion -Color DarkGray
 		Write-ItemLine -Label 'Path' -Value $item.Path -Color DarkGray
 	}
 }
