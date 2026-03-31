@@ -2,6 +2,13 @@
 
 All notable changes to this project are documented in this file.
 
+## [x.x.x] - Unreleased
+
+### Changed 
+
+- Extracted package definitions to `packages.json` file.
+- Allow package version to be defined.
+
 ## [0.1.0] - 2026-03-31
 
 Initial commit focused on hardening and polishing the Windows new-machine installer workflow.
