@@ -4,6 +4,18 @@ Scriptopolis contains practical automation for setting up a fresh Windows machin
 
 The primary asset in this repo is a hardened PowerShell installer script that uses WinGet to install a curated software stack, detects pre-installed apps, supports interactive package selection, and produces clear end-of-run summaries.
 
+## Quick Start
+
+Run in PowerShell:
+
+1. Set temporary execution policy for the current session.
+2. Launch the script.
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
+& ".\New Computer Installation Script.ps1"
+```
+
 ## Primary Files
 
 - `New Computer Installation Script.ps1`: Main installer workflow.
@@ -24,18 +36,6 @@ The primary asset in this repo is a hardened PowerShell installer script that us
 	- skipped/already installed
 	- installed successfully in this run
 	- failed installs with exit code and reason
-
-## Quick Start
-
-Run in PowerShell:
-
-1. Set temporary execution policy for the current session.
-2. Launch the script.
-
-```powershell
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-& ".\New Computer Installation Script.ps1"
-```
 
 ## Notes
 
