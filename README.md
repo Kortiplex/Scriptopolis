@@ -13,12 +13,12 @@ Run in PowerShell:
 
 ```powershell
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
-& ".\New Computer Installation Script.ps1"
+& ".\new_machine\launch_new_machine_install_script.ps1"
 ```
 
 ## Primary Files
 
-- `New Computer Installation Script.ps1`: Main installer workflow.
+- `new_machine/launch_new_machine_install_script.ps1`: Main installer workflow.
 - `New Computer Install Check List.md`: Companion checklist and manual-install notes.
 
 ## What The Installer Does

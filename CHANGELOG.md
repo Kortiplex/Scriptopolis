@@ -14,6 +14,7 @@ All notable changes to this project are documented in this file.
 - Moved installer package definitions out of the script and into `packages.json`.
 - Added `Ollama.Ollama` to the managed package list.
 - Marked all managed packages with `InstallScope: "machine"` for system-level installs by default.
+- Renamed installer script to `launch_new_machine_install_script.ps1` and updated documentation references.
 
 ## [0.1.0] - 2026-03-31
 

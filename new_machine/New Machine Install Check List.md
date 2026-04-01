@@ -8,7 +8,7 @@ Use the following command to quickly install all available programs on winget.
 Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 
 # Second, Run the script
-& ".\New Computer Installation Script.ps1"
+& ".\launch_new_machine_install_script.ps1"
 ```
 
 - [ ] [Blender](https://www.blender.org/download/)
