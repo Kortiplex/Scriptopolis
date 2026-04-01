@@ -1,6 +1,10 @@
 ---
 name: handoff
 description: Write a handoff document summarizing this session for future agents/sessions.
+license: MIT
+metadata:
+  author: shawwn
+  version: 1.0
 ---
 
 Write a handoff document summarizing this session for future agents/sessions.
