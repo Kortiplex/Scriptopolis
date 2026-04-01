@@ -1,18 +1,7 @@
----
-created: 2024-03-30
-Parents:
-Children:
-Siblings:
-Friends:
-origin:
-tags:
-  - computer
-aliases:
----
 # WinGet 
 
 Use the following command to quickly install all available programs on winget. 
-*(Note: Some programs must be manually installed. See [[#Manual Install Programs]].)*
+*(Note: Some programs must be manually installed. See the Manual Install Programs section below.)*
 
 ```powershell
 # First, Loosen security for script execution
@@ -27,17 +16,14 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 	winget install -e --id BlenderFoundation.Blender
 	```
 - [ ] [Zen Browser](https://zen-browser.app/download/) 
-	- (See [[Zen Browser Configuration]])
 	```powershell
 	winget install -e --id Zen-Team.Zen-Browser
 	```
 - [ ] [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022) 
-	- (See [[Unreal Engine and VS Build Tools Issues]])
 	```powershell
 	winget install -e --id Microsoft.VisualStudio.2022.BuildTools
 	```
 - [ ] [Java (OpenJDK 21)](https://learn.microsoft.com/java/openjdk/download) 
-	- (See [[Installing Java - OpenJDK]])
 	```powershell
 	winget install -e --id Microsoft.OpenJDK.21
 	```
@@ -236,7 +222,6 @@ Programs below should be installed manually. This includes packages not currentl
 	# Not currently available in winget
 	```
 - [ ] [Ableton Live](https://www.ableton.com/en/account/) 
-	- (See [[Ableton Configuration]] an [[DAW Plugins]])
 	```powershell
 	# N/A
 	```
@@ -246,5 +231,3 @@ Programs below should be installed manually. This includes packages not currentl
 # Laptop Keyboard
 
 Use PowerToy's **Keyboard Manager** to rebind `Caps Lock` to be `Backspace` **and** rebind `Caps Lock` to `Ctrl + Alt + Backspace`. (We use `Backspace` there because now the physical `Caps Lock` button has been remapped to it).
-
-![[Pasted image 20250805001736.png]]
