@@ -179,7 +179,14 @@ Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass -Force
 ## Manual Install Programs
 
 Programs below should be installed manually. This includes packages not currently available in winget, plus high-priority tooling that is often better installed/configured directly.
-
+- [ ] [WinHance](https://winhance.net/)
+	```powershell
+	irm "https://get.winhance.net" | iex
+	```
+- [ ] [OpenCode](https://opencode.ai/)
+	```powershell
+	curl -fsSL https://opencode.ai/install | bash
+	```
 - [ ] [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
 	```powershell
 	# Recommended manual install for Unreal/C++ setup:
