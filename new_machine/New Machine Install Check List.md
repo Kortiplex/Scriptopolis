@@ -182,11 +182,8 @@ Programs below should be installed manually. This includes packages not currentl
 - [ ] [WinHance](https://winhance.net/)
 	```powershell
 	irm "https://get.winhance.net" | iex
-	```
-- [ ] [OpenCode](https://opencode.ai/)
-	```powershell
-	curl -fsSL https://opencode.ai/install | bash
-	```
+	``` 
+- [ ] [OpenCode (see WSL and OpenCode section)](#wsl-and-opencode)
 - [ ] [Visual Studio Build Tools](https://visualstudio.microsoft.com/downloads/#build-tools-for-visual-studio-2022)
 	```powershell
 	# Recommended manual install for Unreal/C++ setup:
@@ -234,6 +231,50 @@ Programs below should be installed manually. This includes packages not currentl
 	```
 
 ---
+
+# WSL and OpenCode
+
+OpenCode works better on linux and thus we want to have it run inside WSL.
+
+1. Follow the [WSL Installation Guide](https://learn.microsoft.com/en-us/windows/wsl/install) and install Arch Linux.
+   ```powershell
+	wsl --update
+	wsl --install archlinux
+   ```
+2. Follow the [Arch Linux WSL Guide](https://wiki.archlinux.org/title/Install_Arch_Linux_on_WSL) to setup a user account and secure root, but **first install some base packages**:
+	```bash
+	pacman -Syu nano sudo base-devel git
+	```
+3. Create a new user.
+	```bash
+	# -m: creates home directory
+	# -G wheel: adds you to the admin group
+	# -s: sets your shell to bash
+	useradd -m -G wheel -s /bin/bash syrco
+	passwd syrco
+	```
+4. **Grant Sudo Privileges:** Use the safety-checked editor to enable the `wheel` group:
+	```bash
+	EDITOR=nano visudo
+	```
+5. Set the new user as the default.
+	```bash
+	# Add the following too the wsl.conf file:
+	# [user]
+	# default=syrco
+	# [boot]
+	# systemd=true
+	nano /etc/wsl.conf
+	```
+6. Exit and restart arch.
+	```powershell
+	wsl --terminate archlinux
+	```
+7. Install [OpenCode](https://opencode.ai/docs/windows-wsl/).
+	```bash
+	curl -fsSL https://opencode.ai/install | bash
+	```
+8. Done! 🎉
 
 # Laptop Keyboard
 
