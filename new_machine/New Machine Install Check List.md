@@ -250,8 +250,8 @@ OpenCode works better on linux and thus we want to have it run inside WSL.
 	# -m: creates home directory
 	# -G wheel: adds you to the admin group
 	# -s: sets your shell to bash
-	useradd -m -G wheel -s /bin/bash syrco
-	passwd syrco
+	useradd -m -G wheel -s /bin/bash <your-username-here>
+	passwd <your-username-here>
 	```
 4. **Grant Sudo Privileges:** Use the safety-checked editor to enable the `wheel` group:
 	```bash
@@ -261,7 +261,7 @@ OpenCode works better on linux and thus we want to have it run inside WSL.
 	```bash
 	# Add the following too the wsl.conf file:
 	# [user]
-	# default=syrco
+	# default=<your-username-here>
 	# [boot]
 	# systemd=true
 	nano /etc/wsl.conf
