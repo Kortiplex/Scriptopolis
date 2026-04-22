@@ -146,6 +146,11 @@ install_homebrew() {
 	chown "$DEV_USER:$DEV_USER" "$zprofile" "$bashrc"
 }
 
+install_opencode() {
+	log "Installing opencode via Homebrew as $DEV_USER"
+	as_user "$DEV_USER" 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; if brew list --formula opencode >/dev/null 2>&1; then echo "opencode already installed"; else brew install anomalyco/tap/opencode; fi'
+}
+
 set_default_wsl_user() {
 	log "Setting default WSL user to $DEV_USER"
 	cat > /etc/wsl.conf <<EOF
@@ -163,6 +168,7 @@ main() {
 	install_yay
 	install_yay_packages
 	install_homebrew
+	install_opencode
 	set_default_wsl_user
 
 	log "Setup complete. Restart WSL to apply default user change."
