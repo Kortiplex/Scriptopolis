@@ -1,6 +1,7 @@
 ---
 description: Executes shell commands, scripts, and build processes.
 mode: subagent
+color: #d82b2b
 model: opencode/kimi-k2.6
 temperature: 0.1
 permission:

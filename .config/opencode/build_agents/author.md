@@ -1,6 +1,7 @@
 ---
 description: Writes industry-standard technical documentation that is accessible to both developers and non-technical stakeholders.
 mode: subagent
+color: #6abd62
 model: opencode/kimi-k2.6
 temperature: 0.2
 permission:
