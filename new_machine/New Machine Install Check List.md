@@ -253,7 +253,17 @@ OpenCode works better on linux and thus we want to have it run inside WSL.
 	```sh
 	./quick-setup.sh
 	```
-
+3. Follow the instructions and restart arch.
+	```sh
+	exit
+	```
+	```powershell
+	wsl --terminate archlinux
+	```
+	```powershell
+	wsl archlinux
+	```
+![terminal nerd font setup](./../.assets/images/terminal_nerd-font.png)
 # Laptop Keyboard
 
 Use PowerToy's **Keyboard Manager** to rebind `Caps Lock` to be `Backspace` **and** rebind `Caps Lock` to `Ctrl + Alt + Backspace`. (We use `Backspace` there because now the physical `Caps Lock` button has been remapped to it).
