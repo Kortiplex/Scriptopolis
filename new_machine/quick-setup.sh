@@ -9,6 +9,7 @@ PACMAN_PACKAGES=(
 	openssh github-cli pv fzf clang llvm rust python-pip lm_sensors psutils
 	python-psutil neofetch htop bashtop imagemagick jq zsh lolcat ripgrep bat
 	bat-extras lsd cowsay ponysay cmatrix nyancat doge fortune-mod figlet
+	unzip coreutils
 )
 
 YAY_PACKAGES=(
@@ -17,6 +18,10 @@ YAY_PACKAGES=(
 
 log() {
 	printf '\n[%s] %s\n' "setup" "$*"
+}
+
+script_dir() {
+	cd "$(dirname "${BASH_SOURCE[0]}")" && pwd
 }
 
 as_user() {
@@ -69,7 +74,7 @@ init_pacman() {
 	pacman -S --needed --noconfirm archlinux-keyring
 
 	log "Installing bootstrap tools"
-	pacman -S --needed --noconfirm base-devel git sudo curl
+	pacman -S --needed --noconfirm base-devel git sudo curl nano
 }
 
 install_pacman_packages() {
@@ -151,6 +156,62 @@ install_opencode() {
 	as_user "$DEV_USER" 'eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"; if brew list --formula opencode >/dev/null 2>&1; then echo "opencode already installed"; else brew install anomalyco/tap/opencode; fi'
 }
 
+install_oh_my_posh() {
+	log "Installing Oh My Posh prerequisites"
+	pacman -S --needed --noconfirm curl unzip coreutils
+
+	local profile="/home/${DEV_USER}/.profile"
+	local zprofile="/home/${DEV_USER}/.zprofile"
+	local bashrc="/home/${DEV_USER}/.bashrc"
+	local local_bin_path='export PATH="$HOME/.local/bin:$PATH"'
+
+	for rc_file in "$profile" "$zprofile" "$bashrc"; do
+		touch "$rc_file"
+		if ! grep -Fq "$local_bin_path" "$rc_file" 2>/dev/null; then
+			echo "$local_bin_path" >> "$rc_file"
+		fi
+		done
+	chown "$DEV_USER:$DEV_USER" "$profile" "$zprofile" "$bashrc"
+
+	log "Installing Oh My Posh as $DEV_USER"
+	as_user "$DEV_USER" 'if command -v oh-my-posh >/dev/null 2>&1; then echo "oh-my-posh already installed"; else mkdir -p ~/.local/bin; curl -s https://ohmyposh.dev/install.sh | bash -s -- -d ~/.local/bin; fi'
+}
+
+configure_oh_my_posh_theme() {
+	local src_theme
+	local dst_dir="/home/${DEV_USER}/.config/ohmyposh/themes"
+	local dst_theme="${dst_dir}/clean-detailed.omp.json"
+	local zshrc="/home/${DEV_USER}/.zshrc"
+	local posh_block_start="# >>> oh-my-posh >>>"
+	local posh_block_end="# <<< oh-my-posh <<<"
+
+	src_theme="$(script_dir)/../reference/clean-detailed.omp.json"
+
+	log "Configuring Oh My Posh theme for $DEV_USER"
+	mkdir -p "$dst_dir"
+
+	if [[ -f "$src_theme" ]]; then
+		cp "$src_theme" "$dst_theme"
+	else
+		log "Local theme file not found, downloading default clean-detailed theme"
+		curl -fsSL https://raw.githubusercontent.com/JanDeDobbeleer/oh-my-posh/main/themes/clean-detailed.omp.json -o "$dst_theme"
+	fi
+
+	touch "$zshrc"
+	sed -i "/${posh_block_start}/,/${posh_block_end}/d" "$zshrc"
+	cat >> "$zshrc" <<'EOF'
+# >>> oh-my-posh >>>
+export PATH="$HOME/.local/bin:$PATH"
+if command -v oh-my-posh >/dev/null 2>&1; then
+	eval "$(oh-my-posh init zsh --config ~/.config/ohmyposh/themes/clean-detailed.omp.json)"
+fi
+# <<< oh-my-posh <<<
+EOF
+
+	chown -R "$DEV_USER:$DEV_USER" "/home/${DEV_USER}/.config/ohmyposh"
+	chown "$DEV_USER:$DEV_USER" "$zshrc"
+}
+
 set_default_wsl_user() {
 	log "Setting default WSL user to $DEV_USER"
 	cat > /etc/wsl.conf <<EOF
@@ -169,6 +230,8 @@ main() {
 	install_yay_packages
 	install_homebrew
 	install_opencode
+	install_oh_my_posh
+	configure_oh_my_posh_theme
 	set_default_wsl_user
 
 	log "Setup complete. Restart WSL to apply default user change."
