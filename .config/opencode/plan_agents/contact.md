@@ -1,7 +1,7 @@
 ---
 description: Comprehends and clarifies the user's intent by creating interview scripts to hone down details.
 mode: subagent
-color: #e27959
+color: "#e27959"
 model: opencode/gpt-5.4
 reasoningEffort: high
 textVerbosity: low

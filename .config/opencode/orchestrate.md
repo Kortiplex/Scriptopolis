@@ -1,7 +1,7 @@
 ---
 description: Orchestrates sub-agents to fulfill goals set by the user.
 mode: primary
-color: #9d7cd8
+color: "#9d7cd8"
 model: opencode/glm-5.1
 temperature: 0.1
 permission:

@@ -1,7 +1,7 @@
 ---
 description: Explores codebases to find relevant files and information.
 mode: subagent
-color: #59cde2
+color: "#59cde2"
 model: opencode/kimi-k2.6
 temperature: 0.1
 permission:
