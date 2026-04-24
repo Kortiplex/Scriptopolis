@@ -5,7 +5,6 @@ color: "#d9db6d"
 model: opencode/gpt-5.4
 reasoningEffort: high
 textVerbosity: low
-temperature: 0.15
 permission:
   read: allow
   glob: allow

@@ -1,9 +1,8 @@
 ---
 description: Writes code based on industry best practices.
 mode: subagent
-color: "#7366e2"
+color: "#bf66e2"
 model: opencode/kimi-k2.6
-temperature: 0.12
 permission:
   read: allow
   skill: allow

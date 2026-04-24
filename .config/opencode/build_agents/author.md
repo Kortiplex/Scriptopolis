@@ -3,7 +3,6 @@ description: Writes industry-standard technical documentation that is accessible
 mode: subagent
 color: "#6abd62"
 model: opencode/kimi-k2.6
-temperature: 0.2
 permission:
   read: allow
   skill: allow
