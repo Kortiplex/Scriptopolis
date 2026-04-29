@@ -263,7 +263,24 @@ OpenCode works better on linux and thus we want to have it run inside WSL.
 	```powershell
 	wsl archlinux
 	```
+4. Go into the Windows Terminal app and ensure `JetBrainsMono Nerd Font` is used.
 ![terminal nerd font setup](./../.assets/images/terminal_nerd-font.png)
+	- Here's the default terminal profile used as well:
+		```json
+		"profiles": 
+		{
+			"defaults": 
+			{
+				"colorScheme": "Dark+",
+				"font": 
+				{
+					"face": "JetBrainsMono Nerd Font Propo"
+				},
+				"opacity": 95
+			},
+		}
+		```
+
 # Laptop Keyboard
 
 Use PowerToy's **Keyboard Manager** to rebind `Caps Lock` to be `Backspace` **and** rebind `Caps Lock` to `Ctrl + Alt + Backspace`. (We use `Backspace` there because now the physical `Caps Lock` button has been remapped to it).
