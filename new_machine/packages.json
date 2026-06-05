@@ -293,6 +293,13 @@
       "Source": null,
       "DesiredVersion": null,
       "InstallScope": "machine"
+    },
+    {
+      "Name": "qBittorrent",
+      "Id": "qBittorrent.qBittorrent",
+      "Source": null,
+      "DesiredVersion": null,
+      "InstallScope": "machine"
     }
   ]
 }
