@@ -4,7 +4,7 @@ description: Write a handoff document summarizing this session for future agents
 license: MIT
 metadata:
   author: shawwn, kortiplex
-  version: 1.1
+  version: 1.2
 ---
 
 Write a handoff document summarizing this session for future agents/sessions.
@@ -17,8 +17,10 @@ Write a handoff document summarizing this session for future agents/sessions.
 
 3. Use the current session name, otherwise derive a short kebab-case topic slug from the main subject of this session (e.g. `eth-brownie-optimization`, `filter-sol-wsol-command`).
 
-4. Propose the filename: `.docs/agents/handoff/YYYY-MM-DD-NNN-<slug>.md` where NNN is the largest existing NNN plus one for that specific day (e.g. 2026-03-23-001, 2026-03-23-002, 2026-03-24-001, etc)
-  Ask the user: "Proposed filename: `<path>` — is that correct? If not, provide the filename to use instead."
+4. Organize the handoff directory if not already done, placing handoff documents into a directory structure of `<year>/<month>/[handoff-documents]`
+
+5. Propose the filename: `.docs/agents/handoff/<year>/<month>/YYYY-MM-DD-NNN-<slug>.md` where NNN is the largest existing NNN plus one for that specific day (e.g. 2026-03-23-001, 2026-03-23-002, 2026-03-24-001, etc)
+  Ask (either directly or via the question/interview action) the user: "Proposed filename: `<path>` — is that correct? If not, provide the filename to use instead."
   Wait for confirmation or a corrected name before writing.
 
 5. Write the handoff document to the confirmed path. It should include:
