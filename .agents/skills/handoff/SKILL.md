@@ -30,3 +30,4 @@ Write a handoff document summarizing this session for future agents/sessions.
 
   Match the style and depth of the existing handoff docs in `.docs/agents/handoff/`.
 
+6. Redact any sensitive information, such as API keys, passwords, or personally identifiable information.
